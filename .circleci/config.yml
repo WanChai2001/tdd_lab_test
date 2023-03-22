@@ -49,10 +49,10 @@ jobs:
           aws-secret-access-key: AWS_SECRET_ACCESS_KEY
       - run:
           name: Upload to S3
-          command: aws s3 cp function.zip s3://tumpk/function.zip
+          command: aws s3 cp function.zip s3://paween123/function.zip
       - run:
           name: Deploy new Lambda
-          command: aws lambda update-function-code --function-name fastapi --s3-bucket tumpk --s3-key function.zip
+          command: aws lambda update-function-code --function-name testmain --s3-bucket paween123 --s3-key function.zip
 
 workflows:
   build-test-and-deploy:
