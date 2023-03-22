@@ -17,7 +17,7 @@ def test_get_main():
 
 
 def test_post_main():
-    response = client.get("/callname")
+    response = client.post("/callname")
     assert response.status_code == 200
     assert response.json() == {"Hello": "paween"}
 
