@@ -10,4 +10,16 @@ def test_read_main():
     assert response.status_code == 200
     assert response.json() == {"Hello": "World"}
 
+def test_get_main():
+    response = client.get("/callname/paween")
+    assert response.status_code == 200
+    assert response.json() == {"Hello": "paween"}
+
+
+def test_post_main():
+    response = client.get("/callname")
+    assert response.status_code == 200
+    assert response.json() == {"Hello": "paween"}
+
+
 
