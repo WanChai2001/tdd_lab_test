@@ -1,73 +1,47 @@
+# Use the latest 2.1 version of CircleCI pipeline process engine.
+# See: https://circleci.com/docs/configuration-reference
 version: 2.1
 
+# Orbs are reusable packages of CircleCI configuration that you may share across projects, enabling you to create encapsulated, parameterized commands, jobs, and executors that can be used across multiple projects.
+# See: https://circleci.com/docs/orb-intro/
 orbs:
-  python: circleci/python@0.3.2
-  aws-cli: circleci/aws-cli@1.2.1
+  # The python orb contains a set of prepackaged CircleCI configuration you can use repeatedly in your configuration files
+  # Orb commands and jobs help you with common scripting around a language/tool
+  # so you dont have to copy and paste it everywhere.
+  # See the orb documentation here: https://circleci.com/developer/orbs/orb/circleci/python
+  python: circleci/python@1.5.0
 
+# Define a job to be invoked later in a workflow.
+# See: https://circleci.com/docs/configuration-reference/#jobs
 jobs:
-  build-and-test:
-    executor:
-      name: python/default
-      tag: "3.7"
+  build-and-test: # This is the name of the job, feel free to change it to better match what you're trying to do!
+    # These next lines defines a Docker executors: https://circleci.com/docs/executor-types/
+    # You can specify an image from Dockerhub or use one of the convenience images from CircleCI's Developer Hub
+    # A list of available CircleCI Docker convenience images are available here: https://circleci.com/developer/images/image/cimg/python
+    # The executor is the environment in which the steps below will be executed - below will use a python 3.10.2 container
+    # Change the version below to your required version of python
+    docker:
+      - image: cimg/python:3.10.2
+    # Checkout the code as the first step. This is a dedicated CircleCI step.
+    # The python orb's install-packages step will install the dependencies from a Pipfile via Pipenv by default.
+    # Here we're making sure we use just use the system-wide pip. By default it uses the project root's requirements.txt.
+    # Then run your tests!
+    # CircleCI will report the results back to your VCS provider.
     steps:
       - checkout
+      - python/install-packages:
+          pkg-manager: pip
+          # app-dir: ~/project/package-directory/  # If your requirements.txt isn't in the root directory.
+          # pip-dependency-file: test-requirements.txt  # if you have a different name for your requirements file, maybe one that combines your runtime and test requirements.
       - run:
-          name: Setup Virtual env
-          command: |
-            virtualenv -p python3.7 env
-            echo "source ./env/bin/activate" >> $BASH_ENV
-      - run:
-          name: Install Dependencies
-          command: pip install -r requirements.txt
-      - run:
-          name: Create ENV file
-          command: env > .env
-      - run:
-          name: Test
+          name: Run tests
+          # This assumes pytest is installed via the install-package step above
           command: pytest
-      - run:
-          name: Create Zipfile archive of Dependencies
-          command: |
-            cd env/lib/python3.7/site-packages
-            zip -r9 ../../../../function.zip .
-      - run:
-          name: Add App to Zipfile
-          command: zip -g ./function.zip .env -r app
-      - persist_to_workspace:
-          root: .
-          paths:
-            - function.zip
 
-  deploy-dev:
-    executor: aws-cli/default
-    steps:
-      - attach_workspace:
-          at: ./
-      - aws-cli/setup:
-          aws-region: AWS_DEFAULT_REGION
-          aws-access-key-id: AWS_ACCESS_KEY_ID
-          aws-secret-access-key: AWS_SECRET_ACCESS_KEY
-      - run:
-          name: Upload to S3
-          command: aws s3 cp function.zip s3://paween123/function.zip
-      - run:
-          name: Deploy new Lambda
-          command: aws lambda update-function-code --function-name fastapi --s3-bucket paween123 --s3-key function.zip
-
+# Invoke jobs via workflows
+# See: https://circleci.com/docs/configuration-reference/#workflows
 workflows:
-  build-test-and-deploy:
+  sample: # This is the name of the workflow, feel free to change it to better match your workflow.
+    # Inside the workflow, you define the jobs you want to run.
     jobs:
-      - build-and-test:
-          context: aws_lab10
-          filters:
-            branches:
-              only:
-                - main
-      - deploy-dev:
-          context: aws_lab10
-          requires:
-            - build-and-test
-          filters:
-            branches:
-              only:
-                - main
+      - build-and-test
